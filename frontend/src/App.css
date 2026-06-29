@@ -620,20 +620,24 @@ body {
 .stream-preview {
   font-family: var(--mono);
   font-size: 0.68rem;
-  color: #94a3b8;
-  background: #f8fafc;
+  color: #64748b;
+  background: #f1f5f9;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 10px 12px;
-  max-width: 420px;
+  border-radius: 10px;
+  padding: 14px 16px;
+  max-width: 560px;
   width: 100%;
-  max-height: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-height: 240px;
+  overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-all;
   position: relative;
+  line-height: 1.6;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
+.stream-preview::-webkit-scrollbar { width: 4px; }
+.stream-preview::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
 .stream-preview::after {
   content: '';
@@ -641,8 +645,9 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 24px;
-  background: linear-gradient(transparent, #f8fafc);
+  height: 32px;
+  background: linear-gradient(transparent, #f1f5f9);
+  pointer-events: none;
 }
 
 /* ── Canvas / rendered prototype ─────────────────────────────────── */
@@ -1481,6 +1486,36 @@ body {
   color: #6366f1;
   font-weight: 500;
   font-style: italic;
+}
+
+.tutorial-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+.tutorial-progress-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.tutorial-progress-dot.active {
+  background: #6366f1;
+  animation: tutorial-dot-pulse 1s ease-in-out infinite;
+}
+.tutorial-progress-dot.done { background: #10b981; }
+@keyframes tutorial-dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+.tutorial-progress-label {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  font-style: italic;
+  margin-left: 4px;
 }
 
 .tutorial-exit-btn {

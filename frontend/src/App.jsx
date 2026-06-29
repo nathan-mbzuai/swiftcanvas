@@ -162,7 +162,7 @@ export default function App() {
               setStatus("generating");
             }
             streamRef.current += evt.text;
-            setStreamText(streamRef.current.slice(-400));
+            setStreamText(streamRef.current.slice(-2000));
           } else if (evt.type === "done") {
             stopStages();
             setTree(evt.tree);
@@ -429,6 +429,7 @@ export default function App() {
             : (status === "thinking" || status === "generating") ? "generating"
             : "idle"
           }
+          stageIdx={stageIdx}
           onExit={() => setTutorialActive(false)}
         />
       )}
