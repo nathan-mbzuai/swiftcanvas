@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 
-// ── Idle steps (no overlay — all 6 capability cards stay fully visible) ───────
+// ── Idle steps (no overlay; all 6 capability cards stay fully visible) ────────
 
 const IDLE_STEPS = [
   {
     target: ".brand",
     position: "right",
     title: "Welcome to InfiniteCanvas",
-    body: "Describe any interface in plain language and K2-Think V3 will generate a live, interactive React prototype in seconds — no code required.",
+    body: "Describe any interface in plain language and K2-Think V3 will generate a live, interactive React prototype in seconds. No code required.",
     k2: "K2-Think V3 plans your design requirements, lays out component structure, and generates a full UI schema through chain-of-thought reasoning.",
     hasNext: true,
   },
@@ -16,7 +16,7 @@ const IDLE_STEPS = [
     target: ".k2-capability-grid",
     position: "top",
     title: "Six K2-Think V3 capabilities",
-    body: "Each card is a live demo of a different K2-Think V3 capability. Click any card to generate a prototype that demonstrates it — Generative UI, Chain-of-Thought, Tool Calling, Planning, File Generation, or Streaming.",
+    body: "Each card is a live demo of a different K2-Think V3 capability. Click any card to generate a prototype that demonstrates it: Generative UI, Chain-of-Thought, Tool Calling, Planning, File Generation, or Streaming.",
     k2: "The same reasoning engine powers all six capabilities. This demo focuses on Generative UI, but the model API is identical for every capability shown.",
     hasNext: true,
   },
@@ -24,7 +24,7 @@ const IDLE_STEPS = [
     target: ".example-chips",
     position: "right",
     title: "Or type your own prompt",
-    body: "Click any example chip or type your own description. K2-Think V3 will reason through the design and generate a live prototype — watch each stage as it happens.",
+    body: "Click any example chip or type your own description. K2-Think V3 will reason through the design and generate a live prototype. Watch each stage as it happens.",
     hasNext: false,
     allowInteract: true,
     waitForNav: true,
@@ -36,19 +36,19 @@ const IDLE_STEPS = [
 const STAGE_COMMENTARY = {
   brief: {
     k2: "Chain-of-thought phase: the model reasons about your design intent before choosing any components.",
-    body: "K2-Think V3 is reading your prompt and reasoning about the interface domain — who uses it, what data it holds, what actions it needs to support. Every component decision flows from this.",
+    body: "K2-Think V3 is reading your prompt and reasoning about the interface domain: who uses it, what data it holds, what actions it needs to support. Every component decision flows from this.",
   },
   layout: {
     k2: "The model weighs layout options (dashboard, kanban, form, split-pane) against the data model implied by your prompt.",
-    body: "K2-Think V3 is selecting the page structure and deciding which section types — stat rows, charts, tables, forms, kanban columns — best match this domain and user flow.",
+    body: "K2-Think V3 is selecting the page structure and deciding which section types (stat rows, charts, tables, forms, kanban columns) best match this domain and user flow.",
   },
   data: {
-    k2: "Domain-specific data is inferred from context — column names, row values, and KPIs all reflect the actual subject matter.",
-    body: "K2-Think V3 is populating realistic sample data: actual column headers, plausible row values, meaningful KPI numbers — drawn from the design domain, not placeholder text.",
+    k2: "Domain-specific data is inferred from context: column names, row values, and KPIs all reflect the actual subject matter.",
+    body: "K2-Think V3 is populating realistic sample data with actual column headers, plausible row values, and meaningful KPI numbers drawn from the design domain, not placeholder text.",
   },
   building: {
     k2: "The full prototype spec is a single JSON object. Streaming it lets you watch the model write each section as it reasons.",
-    body: "K2-Think V3 is emitting the complete JSON component tree — section by section, prop by prop, data row by data row. Every token in the preview below is being written right now.",
+    body: "K2-Think V3 is emitting the complete JSON component tree, section by section, prop by prop, data row by data row. Every token in the preview below is being written right now.",
   },
   render: {
     k2: "Validation catches structural issues before the renderer fires, so the prototype always appears in a coherent state.",
@@ -58,18 +58,18 @@ const STAGE_COMMENTARY = {
 
 const STAGE_FALLBACK = {
   k2: "K2-Think V3 is actively processing this stage.",
-  body: "K2-Think V3 is working through this stage — reasoning about requirements, generating structure, or producing output. Watch the token stream in the preview below.",
+  body: "K2-Think V3 is working through this stage: reasoning about requirements, generating structure, and producing output. Watch the token stream in the preview below.",
 };
 
-// ── Ready steps — default (Generative UI / unknown) ───────────────────────────
+// ── Ready steps (default / Generative UI) ────────────────────────────────────
 
 const READY_DEFAULT = [
   {
     target: ".prototype-canvas",
     position: "left",
     title: "Your live prototype",
-    body: "Fully interactive — sort the table, fill out forms, drag kanban cards, click chart segments. This is real React running in the browser, not a screenshot.",
-    k2: "K2-Think V3 generated the entire component tree — layout, section types, sample data, and structure — in one reasoning pass from your plain-language prompt.",
+    body: "Fully interactive. Sort the table, fill out forms, drag kanban cards, click chart segments. This is real React running in the browser, not a screenshot.",
+    k2: "K2-Think V3 generated the entire component tree: layout, section types, sample data, and structure, all in one reasoning pass from your plain-language prompt.",
     hasNext: true,
   },
   {
@@ -90,7 +90,7 @@ const READY_DEFAULT = [
   },
 ];
 
-// ── Ready steps — per capability ──────────────────────────────────────────────
+// ── Ready steps per capability ────────────────────────────────────────────────
 
 const READY_BY_CAPABILITY = {
   "chain-of-thought": [
@@ -98,15 +98,15 @@ const READY_BY_CAPABILITY = {
       target: ".prototype-canvas",
       position: "left",
       title: "Reasoning Trace Explorer",
-      body: "K2-Think V3 built this reasoning explorer using its own chain-of-thought — the very process you watched streaming in the build stages. Each panel in this prototype represents a step in that thought process.",
-      k2: "Chain-of-thought is native to every K2-Think V3 response. The reasoning you watched is the exact same mechanism used when calling the model on any task — not a simulation.",
+      body: "K2-Think V3 built this reasoning explorer using its own chain-of-thought, the very process you watched streaming in the build stages. Each panel in this prototype represents a step in that thought process.",
+      k2: "Chain-of-thought is native to every K2-Think V3 response. The reasoning you watched is the exact same mechanism used when calling the model on any task, not a simulation.",
       hasNext: true,
     },
     {
       target: ".btn-export",
       position: "bottom",
       title: "Export this UI",
-      body: "Export the reasoning explorer as JSON or working React JSX. Drop it into any project — it's fully wired with expand/collapse, confidence score rendering, and token counts.",
+      body: "Export the reasoning explorer as JSON or working React JSX. Drop it into any project. It comes fully wired with expand/collapse, confidence score rendering, and token counts.",
       hasNext: true,
     },
     {
@@ -125,7 +125,7 @@ const READY_BY_CAPABILITY = {
       target: ".prototype-canvas",
       position: "left",
       title: "API Integration Hub",
-      body: "K2-Think V3 generated this tool integration dashboard — request builder, response inspector, auth manager, rate limit gauges, and live call logs — all from a single plain-language prompt.",
+      body: "K2-Think V3 generated this tool integration dashboard with request builder, response inspector, auth manager, rate limit gauges, and live call logs, all from a single plain-language prompt.",
       k2: "Tool calling lets K2-Think V3 invoke external APIs, databases, and services during a conversation. This prototype visualises what a tool-orchestration interface looks like.",
       hasNext: true,
     },
@@ -141,7 +141,7 @@ const READY_BY_CAPABILITY = {
       position: "right",
       title: "Add more tools",
       body: "Try: 'add a webhooks panel' or 'add an OAuth flow configurator'. K2-Think V3 will update the hub while preserving the existing tool registry and logs.",
-      k2: "K2-Think V3 receives the full current component tree and reasons about which new sections to add — it never discards unchanged parts.",
+      k2: "K2-Think V3 receives the full current component tree and reasons about which new sections to add. It never discards unchanged parts.",
       hasNext: false,
       isFinal: true,
     },
@@ -152,8 +152,8 @@ const READY_BY_CAPABILITY = {
       target: ".prototype-canvas",
       position: "left",
       title: "Multi-Agent Orchestration Dashboard",
-      body: "K2-Think V3 designed this workflow orchestrator — task dependency graph, agent queue, execution timeline, and run history — reasoning about what a real orchestration interface needs at each planning step.",
-      k2: "Planning & orchestration is how K2-Think V3 breaks complex goals into structured sub-tasks and assigns them to agents or tools. This prototype visualises that planning layer.",
+      body: "K2-Think V3 designed this workflow orchestrator with task dependency graph, agent queue, execution timeline, and run history, reasoning about what a real orchestration interface needs at each planning step.",
+      k2: "Planning and orchestration is how K2-Think V3 breaks complex goals into structured sub-tasks and assigns them to agents or tools. This prototype visualises that planning layer.",
       hasNext: true,
     },
     {
@@ -168,7 +168,7 @@ const READY_BY_CAPABILITY = {
       position: "right",
       title: "Extend the workflow",
       body: "Try: 'add a cost estimation panel per agent' or 'add a failure retry policy configurator'. K2-Think V3 will plan out the new sections and integrate them into the existing dashboard.",
-      k2: "K2-Think V3 treats each refinement as a new planning problem — it reasons about where new sections fit, what data they need, and how they connect to existing components.",
+      k2: "K2-Think V3 treats each refinement as a new planning problem. It reasons about where new sections fit, what data they need, and how they connect to existing components.",
       hasNext: false,
       isFinal: true,
     },
@@ -179,8 +179,8 @@ const READY_BY_CAPABILITY = {
       target: ".file-export",
       position: "left",
       title: "Real file downloads",
-      body: "Click any format button — PDF, DOCX, or PPTX — to generate and download an actual file right now. The document content (headings, bullet points, author info) was written by K2-Think V3.",
-      k2: "K2-Think V3 generated all the document content: section titles, bullet points, and metadata. The file generation (jsPDF, docx, pptxgenjs) then renders it into each format in the browser.",
+      body: "Click any format button (PDF, DOCX, or PPTX) to generate and download an actual file right now. The document content including headings, bullet points, and author info was written by K2-Think V3.",
+      k2: "K2-Think V3 generated all the document content: section titles, bullet points, and metadata. The file generation libraries (jsPDF, docx, pptxgenjs) then render it into each format in the browser.",
       hasNext: true,
     },
     {
@@ -195,7 +195,7 @@ const READY_BY_CAPABILITY = {
       position: "right",
       title: "Customise the document",
       body: "Try: 'add a cover page section with logo placeholder' or 'add a competitive analysis section with a comparison table'. K2-Think V3 will add the section and its content to the exported files.",
-      k2: "Each refinement updates both the UI and the document content object — new sections you add appear in the downloaded PDF, DOCX, and PPTX automatically.",
+      k2: "Each refinement updates both the UI and the document content object. New sections you add appear in the downloaded PDF, DOCX, and PPTX automatically.",
       hasNext: false,
       isFinal: true,
     },
@@ -206,7 +206,7 @@ const READY_BY_CAPABILITY = {
       target: ".prototype-canvas",
       position: "left",
       title: "Real-time Streaming Dashboard",
-      body: "K2-Think V3 designed this live-data monitoring dashboard — throughput charts, event log feed, latency histogram, consumer group status — reasoning about what a streaming analytics interface needs.",
+      body: "K2-Think V3 designed this live-data monitoring dashboard with throughput charts, event log feed, latency histogram, and consumer group status, reasoning about what a streaming analytics interface needs.",
       k2: "Real-time streaming is how InfiniteCanvas delivers K2-Think V3's reasoning token-by-token as you generate. This prototype visualises what that streaming infrastructure looks like as a product UI.",
       hasNext: true,
     },
@@ -214,7 +214,7 @@ const READY_BY_CAPABILITY = {
       target: ".btn-export",
       position: "bottom",
       title: "Export the dashboard",
-      body: "Export as JSON or React JSX. Wire the charts to a real WebSocket or Kafka consumer and every panel — throughput, latency, error rate — updates live.",
+      body: "Export as JSON or React JSX. Wire the charts to a real WebSocket or Kafka consumer and every panel (throughput, latency, error rate) updates live.",
       hasNext: true,
     },
     {
@@ -222,7 +222,7 @@ const READY_BY_CAPABILITY = {
       position: "right",
       title: "Add monitoring panels",
       body: "Try: 'add a dead letter queue monitor' or 'add a per-partition lag chart'. K2-Think V3 will add the panel and its sample data while keeping the rest of the dashboard intact.",
-      k2: "K2-Think V3 streams its response to the browser token-by-token — the same real-time streaming this prototype visualises is what you just watched generating it.",
+      k2: "K2-Think V3 streams its response to the browser token-by-token. The same real-time streaming this prototype visualises is what you just watched generating it.",
       hasNext: false,
       isFinal: true,
     },
@@ -278,7 +278,7 @@ function getSpotlightStyle(targetEl) {
   };
 }
 
-// ── Generating phase bubble (no overlay — building state fully visible) ───────
+// ── Generating phase bubble (no overlay; building state fully visible) ────────
 
 function GeneratingTutorial({ stageIdx, stageKey, stageLabel, totalStages, onExit }) {
   const commentary = STAGE_COMMENTARY[stageKey] || STAGE_FALLBACK;
@@ -338,7 +338,7 @@ function GeneratingTutorial({ stageIdx, stageKey, stageLabel, totalStages, onExi
     <>
       {createPortal(bubble, document.body)}
       {createPortal(
-        <button className="tutorial-exit-btn" style={{ zIndex: 9030 }} onClick={onExit}>✕ Exit tour</button>,
+        <button className="tutorial-exit-btn" style={{ zIndex: 9030 }} onClick={onExit}>Exit tour</button>,
         document.body
       )}
     </>
@@ -359,7 +359,7 @@ function SteppedTutorial({ phase, activeCapability, onExit }) {
     phase === "ready" ? (READY_BY_CAPABILITY[activeCapability] || READY_DEFAULT) : [];
   const step = steps[stepIdx] || null;
 
-  // Idle phase: no dark overlay (all capability cards stay fully visible)
+  // Idle phase: no dark overlay so all capability cards stay fully visible
   const useOverlay = phase !== "idle";
 
   const updatePos = useCallback(() => {
@@ -409,7 +409,7 @@ function SteppedTutorial({ phase, activeCapability, onExit }) {
 
   useEffect(() => { setStepIdx(0); }, [phase, activeCapability]);
 
-  // Only elevate target and use spotlight in ready phase
+  // Only elevate target element in ready phase (overlay + spotlight)
   useEffect(() => {
     if (!targetEl || !useOverlay) return;
     const orig = targetEl.style.position;
@@ -440,7 +440,7 @@ function SteppedTutorial({ phase, activeCapability, onExit }) {
         {step.hasNext && <button className="tutorial-next-btn" onClick={handleNext}>Next →</button>}
         {step.allowInteract && !step.waitForNav && <button className="tutorial-next-btn" onClick={handleNext}>Next →</button>}
         {step.waitForNav && <span className="tutorial-hint">Click an example to continue</span>}
-        {step.isFinal && <button className="tutorial-next-btn" onClick={onExit}>Finish tour ✓</button>}
+        {step.isFinal && <button className="tutorial-next-btn" onClick={onExit}>Finish tour</button>}
       </div>
     </div>
   );
@@ -454,7 +454,7 @@ function SteppedTutorial({ phase, activeCapability, onExit }) {
       )}
       {createPortal(bubble, document.body)}
       {createPortal(
-        <button className="tutorial-exit-btn" style={{ zIndex: 9030 }} onClick={onExit}>✕ Exit tour</button>,
+        <button className="tutorial-exit-btn" style={{ zIndex: 9030 }} onClick={onExit}>Exit tour</button>,
         document.body
       )}
     </>

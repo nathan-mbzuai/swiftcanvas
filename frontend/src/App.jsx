@@ -6,11 +6,11 @@ import Tutorial from "./components/Tutorial.jsx";
 const API_BASE = window.RUNTIME_API_BASE || import.meta.env.VITE_API_URL || "";
 
 const EXAMPLES = [
-  "a dashboard for tracking lab equipment bookings",
-  "a kanban board for a software sprint",
-  "a patient intake form for a clinic",
-  "a timeline for a product launch roadmap",
-  "an analytics dashboard for e-commerce sales",
+  "a CRM pipeline view with deal stages, win rates, and rep performance breakdown",
+  "an investment memo builder with reasoning steps and confidence scores per claim",
+  "a developer portal with API key management, rate limit dashboards, and webhook logs",
+  "a content calendar with article stages, author assignments, and publication timeline",
+  "a competitive analysis report generator with market positioning and SWOT export",
 ];
 
 const CAPABILITIES = [
@@ -19,7 +19,6 @@ const CAPABILITIES = [
     icon: "🎨",
     title: "Generative UI",
     desc: "Describe any interface and get a live React prototype in seconds",
-    active: true,
     prompt: "a project management dashboard with sprint board, task assignments, velocity chart, team workload breakdown, and deadline alert panel",
   },
   {
@@ -405,7 +404,7 @@ export default function App() {
                 {CAPABILITIES.map(cap => (
                   <button
                     key={cap.title}
-                    className={`k2-capability-card${cap.active ? " active" : ""}`}
+                    className="k2-capability-card"
                     onClick={() => { setActiveCapability(cap.key); handleSubmit(cap.prompt); }}
                     disabled={isGenerating}
                     title={`Generate: ${cap.prompt}`}
