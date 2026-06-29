@@ -264,14 +264,40 @@ export default function App() {
         <div className="canvas-scroll">
           {status === "idle" && !tree && (
             <div className="canvas-idle">
-              <div className="canvas-idle-icon">◈</div>
-              <h2>Your prototype will appear here</h2>
-              <p>Enter a description on the left to generate a live, interactive UI prototype powered by K2-Think V3.</p>
+              <div className="k2-idle-header">
+                <div className="k2-idle-logo">⚡</div>
+                <div className="k2-idle-title">K2-Think V3</div>
+                <div className="k2-idle-sub">Next-generation reasoning model</div>
+              </div>
+
+              <div className="k2-capability-grid">
+                {[
+                  { icon: "🎨", title: "Generative UI", desc: "Describe any interface → live React prototype in seconds", active: true },
+                  { icon: "🧠", title: "Chain-of-Thought", desc: "Deep reasoning before every response — watch it think live" },
+                  { icon: "🔧", title: "Tool Calling", desc: "Connect to APIs, databases, and external services" },
+                  { icon: "📋", title: "Planning & Orchestration", desc: "Multi-step agent workflows for complex, long-horizon tasks" },
+                  { icon: "📄", title: "File Generation", desc: "Export to PowerPoint, DOCX, PDF, and more" },
+                  { icon: "⚡", title: "Real-time Streaming", desc: "Watch reasoning and generation token by token" },
+                ].map(cap => (
+                  <div key={cap.title} className={`k2-capability-card${cap.active ? " active" : ""}`}>
+                    <div className="k2-cap-icon">{cap.icon}</div>
+                    <div className="k2-cap-title">{cap.title}</div>
+                    <div className="k2-cap-desc">{cap.desc}</div>
+                    {cap.active && <div className="k2-cap-live">● Live demo</div>}
+                  </div>
+                ))}
+              </div>
+
+              <p className="k2-idle-cta">Type a prompt on the left to see <strong>Generative UI</strong> in action</p>
             </div>
           )}
 
           {isGenerating && (
             <div className="building-state">
+              <div className="k2-powered-bubble">
+                <span className="k2-bubble-dot" />
+                K2-Think V3 · {status === "thinking" ? "Reasoning…" : "Generating UI…"}
+              </div>
               <div className="building-ring" />
               <div className="building-stages">
                 {BUILD_STAGES.map((stage, i) => (
