@@ -110,10 +110,21 @@ Return the complete updated tree.
 CRITICAL REMINDER: Your response must be ONLY the JSON object. Nothing else."""
 
 
+def _base_url() -> str:
+    url = os.environ["K2_THINK_BASE_URL"].rstrip("/")
+    # OpenAI SDK appends /chat/completions to the base path, so the path must
+    # already include the API version prefix (e.g. /v1).  Auto-correct if missing.
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if not parsed.path or parsed.path in ("/", ""):
+        url = url + "/v1"
+        log.warning("[config] K2_THINK_BASE_URL had no path prefix — appended /v1: %s", url)
+    return url
+
+
 def _client() -> OpenAI:
-    base_url = os.environ["K2_THINK_BASE_URL"].rstrip("/")
     api_key = os.environ["K2_THINK_API_KEY"]
-    return OpenAI(api_key=api_key, base_url=base_url, max_retries=0)
+    return OpenAI(api_key=api_key, base_url=_base_url(), max_retries=0)
 
 
 def _model() -> str:
@@ -308,18 +319,33 @@ def stream_generate(prompt: str, prior_tree: dict | None, queue: asyncio.Queue, 
 
 
 def test_connectivity() -> dict:
-    """Quick connectivity check. Returns {"ok": bool, "model": str, "elapsed_ms": int}."""
+    """Quick connectivity check. Returns {"ok": bool, "model": str, "base_url": str, "elapsed_ms": int}."""
+    effective_url = os.environ.get("K2_THINK_BASE_URL", "NOT SET")
+    model = _model()
     try:
+        base = _base_url()
         t0 = _time.monotonic()
         client = _client()
         response = client.chat.completions.create(
-            model=_model(),
+            model=model,
             messages=[{"role": "user", "content": "Reply with the single word: ready"}],
             max_tokens=16,
             timeout=30.0,
         )
         elapsed = int((_time.monotonic() - t0) * 1000)
         content = _strip_think(response.choices[0].message.content or "")
-        return {"ok": True, "model": _model(), "response": content.strip(), "elapsed_ms": elapsed}
+        return {
+            "ok": True,
+            "model": model,
+            "base_url": base,
+            "calls": f"{base}/chat/completions",
+            "response": content.strip(),
+            "elapsed_ms": elapsed,
+        }
     except Exception as exc:
-        return {"ok": False, "model": _model(), "error": str(exc)}
+        return {
+            "ok": False,
+            "model": model,
+            "base_url": effective_url,
+            "error": str(exc),
+        }
