@@ -13,6 +13,47 @@ const EXAMPLES = [
   "an analytics dashboard for e-commerce sales",
 ];
 
+const CAPABILITIES = [
+  {
+    icon: "🎨",
+    title: "Generative UI",
+    desc: "Describe any interface → live React prototype in seconds",
+    active: true,
+    label: "● Live demo",
+    prompt: "a project management dashboard with sprint board, task assignments, velocity chart, team workload breakdown, and deadline alert panel",
+  },
+  {
+    icon: "🧠",
+    title: "Chain-of-Thought",
+    desc: "Deep reasoning before every response — watch it think live",
+    prompt: "an AI reasoning trace explorer with expandable step-by-step thought chains, confidence scores per step, token usage breakdown, branching decision paths, and a model run comparison table",
+  },
+  {
+    icon: "🔧",
+    title: "Tool Calling",
+    desc: "Connect to APIs, databases, and external services",
+    prompt: "an API tool integration hub with connected services registry, live call logs, request builder with response inspector, authentication manager, rate limit gauges, and error tracking panel",
+  },
+  {
+    icon: "📋",
+    title: "Planning & Orchestration",
+    desc: "Multi-step agent workflows for complex, long-horizon tasks",
+    prompt: "a multi-agent workflow orchestration dashboard with task dependency graph, agent assignment queue, execution timeline, agent status cards, step completion tracker, and run history log",
+  },
+  {
+    icon: "📄",
+    title: "File Generation",
+    desc: "Export to PowerPoint, DOCX, PDF, and more",
+    prompt: "a document generation studio with template library, field mapper, format selector for PDF DOCX and PowerPoint, live preview panel, batch generation queue, and export history with download links",
+  },
+  {
+    icon: "⚡",
+    title: "Real-time Streaming",
+    desc: "Watch reasoning and generation token by token",
+    prompt: "a real-time streaming analytics dashboard with live throughput chart, event log feed, latency histogram, consumer group status table, error rate monitor, and stream health indicators",
+  },
+];
+
 const BUILD_STAGES = [
   { key: "brief",    label: "Analyzing design brief…" },
   { key: "layout",   label: "Designing component layout…" },
@@ -51,6 +92,7 @@ export default function App() {
   const [prompt, setPrompt]   = useState("");
   const textareaRef        = useRef(null);
   const historyRef         = useRef(null);
+  const streamPreviewRef   = useRef(null);
   const streamRef          = useRef("");
   const thinkRef           = useRef("");
   const reasoningCursorRef = useRef(0);
@@ -63,6 +105,12 @@ export default function App() {
       historyRef.current.scrollTop = historyRef.current.scrollHeight;
     }
   }, [history, status]);
+
+  // Auto-scroll stream preview to bottom as tokens arrive
+  useEffect(() => {
+    const el = streamPreviewRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [streamText]);
 
   // Live second counter while generating
   useEffect(() => {
@@ -162,7 +210,7 @@ export default function App() {
               setStatus("generating");
             }
             streamRef.current += evt.text;
-            setStreamText(streamRef.current.slice(-2000));
+            setStreamText(streamRef.current);
           } else if (evt.type === "done") {
             stopStages();
             setTree(evt.tree);
@@ -212,7 +260,7 @@ export default function App() {
               onClick={() => setTutorialActive(true)}
               title="Take a guided tour"
             >
-              Tour
+              Tutorial
             </button>
           </div>
         </div>
@@ -325,24 +373,24 @@ export default function App() {
               </div>
 
               <div className="k2-capability-grid">
-                {[
-                  { icon: "🎨", title: "Generative UI", desc: "Describe any interface → live React prototype in seconds", active: true },
-                  { icon: "🧠", title: "Chain-of-Thought", desc: "Deep reasoning before every response — watch it think live" },
-                  { icon: "🔧", title: "Tool Calling", desc: "Connect to APIs, databases, and external services" },
-                  { icon: "📋", title: "Planning & Orchestration", desc: "Multi-step agent workflows for complex, long-horizon tasks" },
-                  { icon: "📄", title: "File Generation", desc: "Export to PowerPoint, DOCX, PDF, and more" },
-                  { icon: "⚡", title: "Real-time Streaming", desc: "Watch reasoning and generation token by token" },
-                ].map(cap => (
-                  <div key={cap.title} className={`k2-capability-card${cap.active ? " active" : ""}`}>
+                {CAPABILITIES.map(cap => (
+                  <button
+                    key={cap.title}
+                    className={`k2-capability-card${cap.active ? " active" : ""}`}
+                    onClick={() => handleSubmit(cap.prompt)}
+                    disabled={isGenerating}
+                    title={`Generate: ${cap.prompt}`}
+                  >
                     <div className="k2-cap-icon">{cap.icon}</div>
                     <div className="k2-cap-title">{cap.title}</div>
                     <div className="k2-cap-desc">{cap.desc}</div>
-                    {cap.active && <div className="k2-cap-live">● Live demo</div>}
-                  </div>
+                    {cap.label && <div className="k2-cap-live">{cap.label}</div>}
+                    <div className="k2-cap-cta">Click to demo →</div>
+                  </button>
                 ))}
               </div>
 
-              <p className="k2-idle-cta">Type a prompt on the left to see <strong>Generative UI</strong> in action</p>
+              <p className="k2-idle-cta">Click any card above or type a prompt on the left</p>
             </div>
           )}
 
@@ -395,7 +443,7 @@ export default function App() {
                 })}
               </div>
               {streamText && (
-                <div className="stream-preview">{streamText}</div>
+                <div className="stream-preview" ref={streamPreviewRef}>{streamText}</div>
               )}
             </div>
           )}
