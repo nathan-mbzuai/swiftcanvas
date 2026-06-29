@@ -274,7 +274,25 @@ def stream_generate(prompt: str, prior_tree: dict | None, queue: asyncio.Queue, 
         )
 
         for chunk in stream:
-            delta = (chunk.choices[0].delta.content or "") if chunk.choices else ""
+            if not chunk.choices:
+                continue
+            delta_obj = chunk.choices[0].delta
+
+            # K2-Think V3 puts reasoning in delta.reasoning / delta.reasoning_content
+            # (not in content). Access via model_dump since the SDK doesn't type these.
+            try:
+                raw = delta_obj.model_dump(exclude_unset=True)
+            except Exception:
+                raw = {}
+            reasoning = (
+                raw.get("reasoning") or raw.get("reasoning_content") or
+                getattr(delta_obj, "reasoning", "") or
+                getattr(delta_obj, "reasoning_content", "") or ""
+            )
+            if reasoning:
+                put({"type": "token", "text": reasoning, "phase": "think"})
+
+            delta = delta_obj.content or ""
             if not delta:
                 continue
 
@@ -282,13 +300,12 @@ def stream_generate(prompt: str, prior_tree: dict | None, queue: asyncio.Queue, 
 
             if not think_done:
                 if "</think>" in buffer:
-                    # V3 sometimes uses <think> tags in content
+                    # Legacy: some responses embed reasoning in content
                     think_done = True
                     _, after = buffer.split("</think>", 1)
                     if after.strip():
                         put({"type": "token", "text": after, "phase": "json"})
                 elif buffer.lstrip().startswith(("{", "[", "```")):
-                    # V3 sometimes wraps JSON in ```json fences, sometimes returns directly
                     think_done = True
                     put({"type": "token", "text": delta, "phase": "json"})
                 else:
@@ -302,7 +319,7 @@ def stream_generate(prompt: str, prior_tree: dict | None, queue: asyncio.Queue, 
         if not _validate(tree):
             log.warning("[stream] Parse failed, attempting blocking repair")
             try:
-                tree = generate_blocking(prompt, prior_tree, timeout=60.0)
+                tree = generate_blocking(prompt, prior_tree, timeout=150.0)
             except Exception as repair_exc:
                 put({"type": "error", "message": f"Could not parse prototype: {repair_exc}"})
                 return
@@ -312,7 +329,7 @@ def stream_generate(prompt: str, prior_tree: dict | None, queue: asyncio.Queue, 
     except Exception as exc:
         log.error("[stream] streaming failed (%s), falling back to blocking", exc)
         try:
-            tree = generate_blocking(prompt, prior_tree, timeout=90.0)
+            tree = generate_blocking(prompt, prior_tree, timeout=150.0)
             put({"type": "done", "tree": tree})
         except Exception as exc2:
             put({"type": "error", "message": str(exc2)})

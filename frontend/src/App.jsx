@@ -39,14 +39,22 @@ export default function App() {
   const [tree, setTree]       = useState(null);
   const [status, setStatus]   = useState("idle");
   const [stageIdx, setStageIdx] = useState(0);
+  const [stageTimes, setStageTimes]       = useState({});
+  const [stageReasoning, setStageReasoning] = useState({});
+  const [expandedStage, setExpandedStage] = useState(null);
+  const [clockTick, setClockTick]         = useState(0);
   const [streamText, setStreamText] = useState("");
   const [errorMsg, setErrorMsg]     = useState("");
   const [showExport, setShowExport] = useState(false);
   const [prompt, setPrompt]   = useState("");
-  const textareaRef  = useRef(null);
-  const historyRef   = useRef(null);
-  const streamRef    = useRef("");
-  const stageTimerRef = useRef(null);
+  const textareaRef        = useRef(null);
+  const historyRef         = useRef(null);
+  const streamRef          = useRef("");
+  const thinkRef           = useRef("");
+  const reasoningCursorRef = useRef(0);
+  const stageIdxRef        = useRef(0);
+  const stageTimerRef      = useRef(null);
+  const clockIntervalRef   = useRef(null);
 
   useEffect(() => {
     if (historyRef.current) {
@@ -54,12 +62,38 @@ export default function App() {
     }
   }, [history, status]);
 
+  // Live second counter while generating
+  useEffect(() => {
+    if (status === "thinking" || status === "generating") {
+      clockIntervalRef.current = setInterval(() => setClockTick(t => t + 1), 1000);
+    } else {
+      clearInterval(clockIntervalRef.current);
+    }
+    return () => clearInterval(clockIntervalRef.current);
+  }, [status]);
+
   function advanceStages(startAt = 0) {
+    const t0 = Date.now();
     setStageIdx(startAt);
+    setStageTimes({ [startAt]: t0 });
+    setStageReasoning({});
+    setExpandedStage(null);
+    setClockTick(0);
+    stageIdxRef.current = startAt;
+    reasoningCursorRef.current = 0;
     let i = startAt;
+
     function tick() {
       if (i < BUILD_STAGES.length - 1) {
+        // Snapshot think-phase text accumulated during this stage
+        const snippet = thinkRef.current.slice(reasoningCursorRef.current).trim();
+        reasoningCursorRef.current = thinkRef.current.length;
+        const finished = i;
+        if (snippet) setStageReasoning(prev => ({ ...prev, [finished]: snippet }));
+
         i++;
+        stageIdxRef.current = i;
+        setStageTimes(prev => ({ ...prev, [i]: Date.now() }));
         setStageIdx(i);
         stageTimerRef.current = setTimeout(tick, 2800 + Math.random() * 1400);
       }
@@ -69,6 +103,12 @@ export default function App() {
 
   function stopStages() {
     clearTimeout(stageTimerRef.current);
+    // Snapshot any remaining reasoning for the last active stage
+    const snippet = thinkRef.current.slice(reasoningCursorRef.current).trim();
+    if (snippet) {
+      setStageReasoning(prev => ({ ...prev, [stageIdxRef.current]: snippet }));
+    }
+    setStageTimes(prev => ({ ...prev, [BUILD_STAGES.length]: Date.now() }));
     setStageIdx(BUILD_STAGES.length - 1);
   }
 
@@ -82,6 +122,8 @@ export default function App() {
     setStreamText("");
     setErrorMsg("");
     streamRef.current = "";
+    thinkRef.current = "";
+    reasoningCursorRef.current = 0;
     advanceStages(0);
 
     try {
@@ -113,6 +155,7 @@ export default function App() {
           if (evt.type === "token") {
             if (evt.phase === "think") {
               setStatus("thinking");
+              thinkRef.current += evt.text;
             } else {
               setStatus("generating");
             }
@@ -300,15 +343,45 @@ export default function App() {
               </div>
               <div className="building-ring" />
               <div className="building-stages">
-                {BUILD_STAGES.map((stage, i) => (
-                  <div
-                    key={stage.key}
-                    className={`building-stage ${i < stageIdx ? "done" : i === stageIdx ? "active" : ""}`}
-                  >
-                    <span className="stage-dot" />
-                    {stage.label}
-                  </div>
-                ))}
+                {BUILD_STAGES.map((stage, i) => {
+                  const isDone   = i < stageIdx;
+                  const isActive = i === stageIdx;
+                  const t0 = stageTimes[i];
+                  const t1 = stageTimes[i + 1] ?? (isDone ? stageTimes[BUILD_STAGES.length] : null);
+                  const elapsedMs = t0 ? ((isDone && t1 ? t1 : Date.now()) - t0) : null;
+                  const elapsedS  = elapsedMs !== null ? (elapsedMs / 1000).toFixed(1) : null;
+                  const reasoning = stageReasoning[i];
+                  const isExpanded = expandedStage === i;
+                  void clockTick; // trigger re-render for live timer
+                  return (
+                    <div key={stage.key} className="stage-row">
+                      <div className={`building-stage ${isDone ? "done" : isActive ? "active" : ""}`}>
+                        <span className="stage-dot" />
+                        <span className="stage-label">{stage.label}</span>
+                        {elapsedS !== null && (
+                          <span className="stage-elapsed">{elapsedS}s</span>
+                        )}
+                        {reasoning && (
+                          <button
+                            className={`stage-expand-btn ${isExpanded ? "open" : ""}`}
+                            onClick={() => setExpandedStage(isExpanded ? null : i)}
+                            title="View K2-Think reasoning"
+                          >
+                            {isExpanded ? "▲" : "▼"} Reasoning
+                          </button>
+                        )}
+                      </div>
+                      {isExpanded && reasoning && (
+                        <div className="stage-reasoning">
+                          <div className="stage-reasoning-label">
+                            K2-Think V3 · Stage reasoning
+                          </div>
+                          <div className="stage-reasoning-text">{reasoning}</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
               {streamText && (
                 <div className="stream-preview">{streamText}</div>

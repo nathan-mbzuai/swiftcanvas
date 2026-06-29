@@ -56,7 +56,7 @@ async def generate(req: GenerateRequest):
     async def event_stream():
         while True:
             try:
-                msg = await asyncio.wait_for(queue.get(), timeout=120)
+                msg = await asyncio.wait_for(queue.get(), timeout=200)
             except asyncio.TimeoutError:
                 yield f'data: {json.dumps({"type": "error", "message": "Generation timed out"})}\n\n'
                 break
