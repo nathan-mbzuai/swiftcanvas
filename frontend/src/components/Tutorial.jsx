@@ -29,34 +29,34 @@ const IDLE_STEPS = [
   },
 ];
 
-// One entry per BUILD_STAGE — explains what's actually happening at each stage
-const STAGE_COMMENTARY = [
-  {
-    title: "Analyzing your design brief",
-    body: "K2-Think V3 is parsing your prompt — identifying entities, user roles, and data relationships to understand exactly what this interface needs to do.",
-    k2: "This is the chain-of-thought phase. The model reasons about your intent before committing to any component decisions.",
+// Keyed by BUILD_STAGES.key — works for any number of stages, unknown keys get fallback
+const STAGE_EXPLANATIONS = {
+  brief: {
+    k2: "Chain-of-thought phase: the model reasons about your design intent before choosing any components.",
+    body: "K2-Think V3 is reading your prompt and reasoning about the interface domain — who uses it, what data it holds, and what actions it needs to support. This shapes every component decision that follows.",
   },
-  {
-    title: "Designing component layout",
-    body: "K2-Think V3 is choosing the page structure — dashboard, kanban, form, or split-pane — and deciding which section types (charts, tables, KPIs) fit this domain best.",
-    k2: "The model weighs layout options against your prompt's implied data model. It considers readability, information density, and domain conventions.",
+  layout: {
+    k2: "The model weighs layout options (dashboard, kanban, form, split-pane) against the data model implied by your prompt.",
+    body: "K2-Think V3 is selecting the page structure and deciding which section types — stat rows, charts, tables, forms, kanban columns — best match this domain and user flow.",
   },
-  {
-    title: "Creating sample data",
-    body: "K2-Think V3 is generating realistic, domain-specific values — not generic placeholders. Column names, row data, chart figures, and KPI numbers are all inferred from context.",
-    k2: "Realistic data matters for demos. The model infers domain-appropriate values (e.g. actual lab equipment names, plausible booking status labels).",
+  data: {
+    k2: "Domain-specific data is inferred from context, not randomly generated — column names, row values, and KPIs all reflect the actual subject matter.",
+    body: "K2-Think V3 is populating realistic sample data: actual column headers, plausible row values, meaningful KPI numbers — all drawn from the design domain, not placeholder text.",
   },
-  {
-    title: "Streaming the component tree",
-    body: "K2-Think V3 is emitting the full JSON component tree token-by-token. Every section, prop, and data row is being written in real time — watch the token stream in the preview below.",
-    k2: "The complete prototype spec is a single structured JSON object. Streaming lets you watch the model's output as it happens — nothing is buffered.",
+  building: {
+    k2: "The full prototype spec is a single JSON object. Streaming it lets you watch the model write each section as it reasons about it.",
+    body: "K2-Think V3 is now emitting the complete JSON component tree — section by section, prop by prop, data row by data row. Every token in the preview below is being written right now.",
   },
-  {
-    title: "Finalizing & rendering",
-    body: "SwiftCanvas is parsing the completed JSON, validating the component structure, and handing it off to the React renderer. Your prototype will appear any moment.",
-    k2: "After streaming ends, SwiftCanvas validates the tree and applies structure repairs if needed — then the React renderer fires and the prototype goes live.",
+  render: {
+    k2: "Validation catches structural issues before the renderer fires, so the prototype always appears in a coherent state.",
+    body: "SwiftCanvas is parsing the completed JSON, checking the component tree for structural integrity, and handing it to the React renderer. Your prototype is about to appear.",
   },
-];
+};
+
+const STAGE_FALLBACK = {
+  k2: "K2-Think V3 is actively processing this stage of the prototype.",
+  body: "K2-Think V3 is working through this stage — reasoning about requirements, generating structure, or producing output. Watch the token stream in the preview below.",
+};
 
 const READY_STEPS = [
   {
@@ -90,7 +90,7 @@ function getBubbleStyle(targetEl, position) {
   const rect = targetEl.getBoundingClientRect();
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const gap = 14;
+  const gap = 16;
   const bubbleW = Math.min(340, vw - gap * 2);
   const bubbleH = 360;
 
@@ -132,23 +132,20 @@ function getSpotlightStyle(targetEl) {
   };
 }
 
-// ── Generating phase — live bubble that tracks build stages ───────────────────
+// ── Generating phase — no overlay, bubble tracks the live building stages ─────
 
-function GeneratingTutorial({ stageIdx, onExit }) {
-  const total   = STAGE_COMMENTARY.length;
-  const idx     = Math.min(stageIdx ?? 0, total - 1);
-  const comment = STAGE_COMMENTARY[idx];
+function GeneratingTutorial({ stageIdx, stageKey, stageLabel, totalStages, onExit }) {
+  const explanation = STAGE_EXPLANATIONS[stageKey] || STAGE_FALLBACK;
+  const displayIdx  = Math.min(stageIdx ?? 0, (totalStages ?? 5) - 1);
 
-  const [targetEl,     setTargetEl]     = useState(null);
-  const [bubblePos,    setBubblePos]    = useState(null);
-  const [spotlightPos, setSpotlightPos] = useState(null);
+  const [bubblePos, setBubblePos] = useState(null);
+  const [targetEl,  setTargetEl]  = useState(null);
 
   const updatePos = useCallback(() => {
     const el = document.querySelector(".building-stages") || document.querySelector(".building-state");
-    if (!el) { setBubblePos(null); setSpotlightPos(null); return; }
+    if (!el) { setBubblePos(null); return; }
     if (el !== targetEl) setTargetEl(el);
     setBubblePos(getBubbleStyle(el, "right"));
-    setSpotlightPos(getSpotlightStyle(el));
   }, [targetEl]);
 
   useEffect(() => {
@@ -166,30 +163,27 @@ function GeneratingTutorial({ stageIdx, onExit }) {
     return () => { window.removeEventListener("scroll", handler, true); window.removeEventListener("resize", handler); };
   }, [targetEl, updatePos]);
 
-  useEffect(() => {
-    if (!targetEl) return;
-    const orig = targetEl.style.position;
-    if (!orig || orig === "static") targetEl.style.position = "relative";
-    targetEl.style.zIndex = "9010";
-    return () => {
-      targetEl.style.zIndex = "";
-      if (!orig || orig === "static") targetEl.style.position = "";
-    };
-  }, [targetEl]);
-
+  // No overlay, no spotlight — the building state is fully visible during generation.
+  // The bubble floats next to the stages list with a connecting indicator.
   const bubble = bubblePos && (
-    <div key={idx} className="tutorial-bubble" style={{ ...bubblePos, zIndex: 9030 }}>
+    <div
+      key={`gen-${displayIdx}`}
+      className="tutorial-bubble tutorial-bubble--generating"
+      style={{ ...bubblePos, zIndex: 9030 }}
+    >
       <div className="tutorial-k2-flag">
-        <span className="tutorial-k2-label">⚡ K2-Think V3 · Stage {idx + 1} of {total}</span>
-        <span className="tutorial-k2-desc">{comment.k2}</span>
+        <span className="tutorial-k2-label">
+          ⚡ K2-Think V3 · Stage {displayIdx + 1}{totalStages ? ` of ${totalStages}` : ""}
+        </span>
+        <span className="tutorial-k2-desc">{explanation.k2}</span>
       </div>
-      <div className="tutorial-bubble-title">{comment.title}</div>
-      <div className="tutorial-bubble-body">{comment.body}</div>
+      <div className="tutorial-bubble-title">{stageLabel || "Processing…"}</div>
+      <div className="tutorial-bubble-body">{explanation.body}</div>
       <div className="tutorial-progress-row">
-        {STAGE_COMMENTARY.map((_, i) => (
+        {Array.from({ length: totalStages ?? 5 }).map((_, i) => (
           <span
             key={i}
-            className={`tutorial-progress-dot ${i === idx ? "active" : i < idx ? "done" : ""}`}
+            className={`tutorial-progress-dot ${i === displayIdx ? "active" : i < displayIdx ? "done" : ""}`}
           />
         ))}
         <span className="tutorial-progress-label">Generating…</span>
@@ -199,9 +193,6 @@ function GeneratingTutorial({ stageIdx, onExit }) {
 
   return (
     <>
-      <div className="tutorial-overlay">
-        {spotlightPos && <div className="tutorial-spotlight" style={spotlightPos} />}
-      </div>
       {createPortal(bubble, document.body)}
       {createPortal(
         <button className="tutorial-exit-btn" style={{ zIndex: 9030 }} onClick={onExit}>✕ Exit tour</button>,
@@ -211,7 +202,7 @@ function GeneratingTutorial({ stageIdx, onExit }) {
   );
 }
 
-// ── Idle / Ready phases — step-based ─────────────────────────────────────────
+// ── Idle / Ready phases — step-based with overlay + spotlight ─────────────────
 
 function SteppedTutorial({ phase, onExit }) {
   const [stepIdx,      setStepIdx]      = useState(0);
@@ -329,9 +320,17 @@ function SteppedTutorial({ phase, onExit }) {
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
-export default function Tutorial({ phase, stageIdx, onExit }) {
+export default function Tutorial({ phase, stageIdx, stageKey, stageLabel, totalStages, onExit }) {
   if (phase === "generating") {
-    return <GeneratingTutorial stageIdx={stageIdx} onExit={onExit} />;
+    return (
+      <GeneratingTutorial
+        stageIdx={stageIdx}
+        stageKey={stageKey}
+        stageLabel={stageLabel}
+        totalStages={totalStages}
+        onExit={onExit}
+      />
+    );
   }
   return <SteppedTutorial phase={phase} onExit={onExit} />;
 }

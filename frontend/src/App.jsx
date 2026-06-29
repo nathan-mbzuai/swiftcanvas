@@ -347,7 +347,7 @@ export default function App() {
           )}
 
           {isGenerating && (
-            <div className="building-state">
+            <div className={`building-state${tutorialActive ? " in-tour" : ""}`}>
               <div className="k2-powered-bubble">
                 <span className="k2-bubble-dot" />
                 K2-Think V3 · {status === "thinking" ? "Reasoning…" : "Generating UI…"}
@@ -430,6 +430,9 @@ export default function App() {
             : "idle"
           }
           stageIdx={stageIdx}
+          stageKey={BUILD_STAGES[stageIdx]?.key}
+          stageLabel={BUILD_STAGES[stageIdx]?.label}
+          totalStages={BUILD_STAGES.length}
           onExit={() => setTutorialActive(false)}
         />
       )}
