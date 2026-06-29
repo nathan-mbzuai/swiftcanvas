@@ -90,6 +90,28 @@ props: { "title": "string or null", "items": [{ "primary": "Main", "secondary": 
 "alert" — Alert box. span: full or half.
 props: { "type": "info|success|warning|error", "title": "string", "message": "string" }
 
+"file_export" — Working file generation panel. Renders real Download buttons that produce \
+actual PDF, DOCX, and PPTX files in the browser when clicked. Use this whenever the prototype \
+involves document generation, report export, or file download capabilities. span: full.
+props: {
+  "title": "Export document title",
+  "description": "One sentence describing the document",
+  "formats": ["pdf", "docx", "pptx"],
+  "templates": ["Template A", "Template B"],
+  "content": {
+    "title": "The document title used in the exported file",
+    "description": "Document body description — appears in the exported file",
+    "author": "Author name or team",
+    "date": "Month YYYY",
+    "sections": [
+      { "heading": "Section heading", "bullets": ["Key point 1", "Key point 2", "Key point 3"] }
+    ]
+  }
+}
+Fill content.sections with 3-5 realistic sections relevant to the prototype domain. \
+Each section should have 3-5 substantive bullet points. This content appears verbatim \
+in the downloaded PDF, DOCX, and PPTX files — make it domain-appropriate and meaningful.
+
 LAYOUT RULES:
 - First section MUST be "header"
 - stat_row is always span "full"

@@ -43,7 +43,7 @@ const CAPABILITIES = [
     icon: "📄",
     title: "File Generation",
     desc: "Export to PowerPoint, DOCX, PDF, and more",
-    prompt: "a document generation studio with template library, field mapper, format selector for PDF DOCX and PowerPoint, live preview panel, batch generation queue, and export history with download links",
+    prompt: "a quarterly business review report generator. Include a stat_row with report metrics, a form for configuring report details, and a file_export section (type: file_export) with realistic content including sections for Executive Summary, Key Performance Metrics, Regional Breakdown, and Strategic Recommendations — with actual PDF, DOCX, and PPTX download buttons that generate real files",
   },
   {
     icon: "⚡",

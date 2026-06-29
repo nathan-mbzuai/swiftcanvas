@@ -9,18 +9,20 @@ import Timeline from "./ui/Timeline.jsx";
 import ListUI from "./ui/List.jsx";
 import NavBar from "./ui/NavBar.jsx";
 import AlertUI from "./ui/Alert.jsx";
+import FileExport from "./ui/FileExport.jsx";
 
 const SECTION_MAP = {
-  stat_row:   StatRow,
-  table:      DataTable,
-  bar_chart:  BarChartUI,
-  line_chart: LineChartUI,
-  pie_chart:  PieChartUI,
-  form:       FormUI,
-  kanban:     KanbanBoard,
-  timeline:   Timeline,
-  list:       ListUI,
-  alert:      AlertUI,
+  stat_row:    StatRow,
+  table:       DataTable,
+  bar_chart:   BarChartUI,
+  line_chart:  LineChartUI,
+  pie_chart:   PieChartUI,
+  form:        FormUI,
+  kanban:      KanbanBoard,
+  timeline:    Timeline,
+  list:        ListUI,
+  alert:       AlertUI,
+  file_export: FileExport,
 };
 
 function ProtoHeader({ title, subtitle, badge }) {
@@ -57,7 +59,7 @@ function Section({ section }) {
   const Component = SECTION_MAP[section.type];
   if (!Component) return null;
 
-  const needsCard = !["kanban", "alert"].includes(section.type);
+  const needsCard = !["kanban", "alert", "file_export"].includes(section.type);
 
   return (
     <div className={spanClass}>
