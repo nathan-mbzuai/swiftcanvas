@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Renderer from "./components/Renderer.jsx";
 import ExportPanel from "./components/ExportPanel.jsx";
+import Tutorial from "./components/Tutorial.jsx";
 
 const API_BASE = window.RUNTIME_API_BASE || import.meta.env.VITE_API_URL || "";
 
@@ -35,6 +36,7 @@ function statusLabel(status) {
 }
 
 export default function App() {
+  const [tutorialActive, setTutorialActive] = useState(false);
   const [history, setHistory] = useState([]);
   const [tree, setTree]       = useState(null);
   const [status, setStatus]   = useState("idle");
@@ -200,9 +202,18 @@ export default function App() {
             <div className="brand-icon">⚡</div>
             <h1>SwiftCanvas</h1>
           </div>
-          <div className="k2-badge">
-            <span className="k2-badge-dot" />
-            K2-Think V3
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div className="k2-badge">
+              <span className="k2-badge-dot" />
+              K2-Think V3
+            </div>
+            <button
+              className="tutorial-start-btn"
+              onClick={() => setTutorialActive(true)}
+              title="Take a guided tour"
+            >
+              Tour
+            </button>
           </div>
         </div>
 
@@ -410,6 +421,17 @@ export default function App() {
           <ExportPanel tree={tree} onClose={() => setShowExport(false)} />
         )}
       </div>
+
+      {tutorialActive && (
+        <Tutorial
+          phase={
+            status === "ready" || status === "error" ? "ready"
+            : (status === "thinking" || status === "generating") ? "generating"
+            : "idle"
+          }
+          onExit={() => setTutorialActive(false)}
+        />
+      )}
     </div>
   );
 }
