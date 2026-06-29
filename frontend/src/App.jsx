@@ -15,6 +15,7 @@ const EXAMPLES = [
 
 const CAPABILITIES = [
   {
+    key: "generative-ui",
     icon: "🎨",
     title: "Generative UI",
     desc: "Describe any interface and get a live React prototype in seconds",
@@ -22,30 +23,35 @@ const CAPABILITIES = [
     prompt: "a project management dashboard with sprint board, task assignments, velocity chart, team workload breakdown, and deadline alert panel",
   },
   {
+    key: "chain-of-thought",
     icon: "🧠",
     title: "Chain-of-Thought",
     desc: "Watch the full reasoning chain before every response",
     prompt: "an AI reasoning trace explorer with expandable step-by-step thought chains, confidence scores per step, token usage breakdown, branching decision paths, and a model run comparison table",
   },
   {
+    key: "tool-calling",
     icon: "🔧",
     title: "Tool Calling",
     desc: "Connect to APIs, databases, and external services",
     prompt: "an API tool integration hub with connected services registry, live call logs, request builder with response inspector, authentication manager, rate limit gauges, and error tracking panel",
   },
   {
+    key: "planning",
     icon: "📋",
     title: "Planning & Orchestration",
     desc: "Multi-step agent workflows for complex, long-horizon tasks",
     prompt: "a multi-agent workflow orchestration dashboard with task dependency graph, agent assignment queue, execution timeline, agent status cards, step completion tracker, and run history log",
   },
   {
+    key: "file-generation",
     icon: "📄",
     title: "File Generation",
     desc: "Export to PowerPoint, DOCX, PDF, and more",
     prompt: "a quarterly business review report generator. Include a stat_row with report metrics, a form for configuring report details, and a file_export section (type: file_export) with realistic content including sections for Executive Summary, Key Performance Metrics, Regional Breakdown, and Strategic Recommendations — with actual PDF, DOCX, and PPTX download buttons that generate real files",
   },
   {
+    key: "streaming",
     icon: "⚡",
     title: "Real-time Streaming",
     desc: "Watch reasoning and generation token by token",
@@ -76,7 +82,8 @@ function statusLabel(status) {
 }
 
 export default function App() {
-  const [tutorialActive, setTutorialActive] = useState(false);
+  const [tutorialActive,    setTutorialActive]    = useState(false);
+  const [activeCapability,  setActiveCapability]  = useState(null);
   const [history, setHistory] = useState([]);
   const [tree, setTree]       = useState(null);
   const [status, setStatus]   = useState("idle");
@@ -234,6 +241,7 @@ export default function App() {
     setTree(null);
     setStreamText("");
     setErrorMsg("");
+    setActiveCapability(null);
   }
 
   function handleKeyDown(e) {
@@ -263,7 +271,10 @@ export default function App() {
             </div>
             <button
               className="tutorial-start-btn"
-              onClick={() => setTutorialActive(true)}
+              onClick={() => {
+                if (tree || status === "ready" || status === "error") handleBack();
+                setTutorialActive(true);
+              }}
               title="Take a guided tour"
             >
               Tutorial
@@ -395,7 +406,7 @@ export default function App() {
                   <button
                     key={cap.title}
                     className={`k2-capability-card${cap.active ? " active" : ""}`}
-                    onClick={() => handleSubmit(cap.prompt)}
+                    onClick={() => { setActiveCapability(cap.key); handleSubmit(cap.prompt); }}
                     disabled={isGenerating}
                     title={`Generate: ${cap.prompt}`}
                   >
@@ -499,6 +510,7 @@ export default function App() {
           stageKey={BUILD_STAGES[stageIdx]?.key}
           stageLabel={BUILD_STAGES[stageIdx]?.label}
           totalStages={BUILD_STAGES.length}
+          activeCapability={activeCapability}
           onExit={() => setTutorialActive(false)}
         />
       )}
