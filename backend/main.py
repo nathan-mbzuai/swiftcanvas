@@ -36,7 +36,8 @@ app.add_middleware(
 
 
 class GenerateRequest(BaseModel):
-    messages: list[dict]
+    prompt: str
+    prior_tree: dict | None = None
 
 
 @app.post("/api/generate")
@@ -47,7 +48,7 @@ async def generate(req: GenerateRequest):
 
     thread = threading.Thread(
         target=k2think.stream_generate,
-        args=(req.messages, queue, loop),
+        args=(req.prompt, req.prior_tree, queue, loop),
         daemon=True,
     )
     thread.start()

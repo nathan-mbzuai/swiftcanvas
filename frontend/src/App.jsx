@@ -76,8 +76,7 @@ export default function App() {
     const trimmed = (text || prompt).trim();
     if (!trimmed || status === "thinking" || status === "generating") return;
 
-    const newMessages = [...history, { role: "user", content: trimmed }];
-    setHistory(newMessages);
+    setHistory(prev => [...prev, { role: "user", content: trimmed }]);
     setPrompt("");
     setStatus("thinking");
     setStreamText("");
@@ -89,7 +88,7 @@ export default function App() {
       const response = await fetch(`${API_BASE}/api/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ prompt: trimmed, prior_tree: tree || null }),
       });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -122,7 +121,7 @@ export default function App() {
           } else if (evt.type === "done") {
             stopStages();
             setTree(evt.tree);
-            setHistory(prev => [...prev, { role: "assistant", content: JSON.stringify(evt.tree) }]);
+            setHistory(prev => [...prev, { role: "assistant", content: evt.tree?.title || "Generated" }]);
             setStatus("ready");
           } else if (evt.type === "error") {
             stopStages();

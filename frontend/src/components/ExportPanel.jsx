@@ -158,17 +158,20 @@ function generateJSX(tree) {
 }
 
 function highlightJSX(code) {
-  return code
-    .replace(/\/\/.*$/gm, '<span class="jsx-comment">$&</span>')
-    .replace(/\b(import|export|default|from|const|let|var|return|function|if|else|true|false|null|undefined)\b/g, '<span class="jsx-keyword">$1</span>')
-    .replace(/(&lt;\/?)([A-Za-z][A-Za-z0-9.]*)/g, '$1<span class="jsx-tag">$2</span>')
-    .replace(/\b([a-zA-Z]+)(?==)/g, '<span class="jsx-attr">$1</span>')
-    .replace(/'([^']*)'/g, `'<span class="jsx-string">$1</span>'`)
-    .replace(/"([^"]*)"/g, `"<span class="jsx-string">$1</span>"`);
-}
-
-function escapeHTML(str) {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const esc = code
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  return esc.replace(
+    /(\/\/[^\n]*)|('(?:[^'\\]|\\.)*')|("(?:[^"\\]|\\.)*")|(&lt;\/?[A-Za-z][A-Za-z0-9.]*)|(\b(?:import|export|default|from|const|let|var|return|function|if|else|true|false|null|undefined)\b)/g,
+    (match, comment, strS, strD, tag, keyword) => {
+      if (comment) return `<span class="jsx-comment">${match}</span>`;
+      if (strS || strD) return `<span class="jsx-string">${match}</span>`;
+      if (tag)     return `<span class="jsx-tag">${match}</span>`;
+      if (keyword) return `<span class="jsx-keyword">${match}</span>`;
+      return match;
+    }
+  );
 }
 
 export default function ExportPanel({ tree, onClose }) {
@@ -188,7 +191,7 @@ export default function ExportPanel({ tree, onClose }) {
   }
 
   const jsonHighlighted = useMemo(() => highlightJSON(tree), [tree]);
-  const jsxHighlighted  = useMemo(() => highlightJSX(escapeHTML(jsxStr)), [jsxStr]);
+  const jsxHighlighted  = useMemo(() => highlightJSX(jsxStr), [jsxStr]);
 
   return (
     <div className="export-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
