@@ -23,9 +23,9 @@ logging.basicConfig(
     format="%(asctime)s [%(name)s] %(levelname)s %(message)s",
     datefmt="%H:%M:%S",
 )
-log = logging.getLogger("swiftcanvas")
+log = logging.getLogger("infinitecanvas")
 
-app = FastAPI(title="SwiftCanvas API")
+app = FastAPI(title="InfiniteCanvas API")
 
 app.add_middleware(
     CORSMiddleware,

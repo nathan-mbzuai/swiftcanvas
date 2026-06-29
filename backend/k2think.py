@@ -8,10 +8,10 @@ import re
 import time as _time
 from openai import OpenAI
 
-log = logging.getLogger("swiftcanvas")
+log = logging.getLogger("infinitecanvas")
 
 SYSTEM_PROMPT = """\
-You are SwiftCanvas, a generative UI system. Convert a plain-language interface description \
+You are InfiniteCanvas, a generative UI system. Convert a plain-language interface description \
 into a JSON component tree that a React renderer will display as a live, interactive prototype.
 
 CRITICAL: Respond ONLY with a single valid JSON object. \
@@ -146,6 +146,36 @@ def _strip_think(text: str) -> str:
     return text
 
 
+def _complete_truncated_json(text: str) -> str:
+    """
+    Append the minimum closing brackets/braces needed to make truncated JSON
+    parseable. Walks the string tracking open containers, skipping string
+    contents. Returns the completed string (may still be invalid if the input
+    is too corrupted).
+    """
+    stack = []
+    in_str = False
+    escape = False
+    for ch in text:
+        if escape:
+            escape = False
+            continue
+        if ch == "\\" and in_str:
+            escape = True
+            continue
+        if ch == '"':
+            in_str = not in_str
+            continue
+        if in_str:
+            continue
+        if ch in ("{", "["):
+            stack.append("}" if ch == "{" else "]")
+        elif ch in ("}", "]"):
+            if stack and stack[-1] == ch:
+                stack.pop()
+    return text + "".join(reversed(stack))
+
+
 def extract_last_json(text: str) -> object:
     """
     Find the root-level JSON object in text.
@@ -173,6 +203,16 @@ def extract_last_json(text: str) -> object:
             obj, _ = decoder.raw_decode(text, pos)
             return obj
         except json.JSONDecodeError:
+            continue
+
+    # Last resort: try to complete a truncated JSON object
+    for pos in positions:
+        try:
+            completed = _complete_truncated_json(text[pos:])
+            obj = json.loads(completed)
+            if isinstance(obj, (dict, list)):
+                return obj
+        except (json.JSONDecodeError, Exception):
             continue
 
     return None
@@ -214,7 +254,7 @@ def generate_blocking(prompt: str, prior_tree: dict | None = None, timeout: floa
     response = client.chat.completions.create(
         model=_model(),
         messages=msgs,
-        max_tokens=4096,
+        max_tokens=8192,
         timeout=timeout,
     )
     elapsed = _time.monotonic() - t0
@@ -227,16 +267,17 @@ def generate_blocking(prompt: str, prior_tree: dict | None = None, timeout: floa
     if _validate(tree):
         return tree
 
-    log.warning("[generate] First attempt invalid, retrying with clearer instruction")
+    log.warning("[generate] First attempt invalid, retrying with explicit JSON instruction")
     retry_prompt = (
         f"{prompt}\n\n"
-        "IMPORTANT: You MUST return ONLY valid JSON — no prose, no markdown, no code fences. "
-        "The JSON must have 'title' and 'sections' keys."
+        "CRITICAL: Your entire response must be a single valid JSON object with no surrounding "
+        "text, no markdown fences, and no code blocks. Start your response with {{ and end with }}. "
+        "The JSON must contain 'title' (string) and 'sections' (array with at least one object)."
     )
     response2 = client.chat.completions.create(
         model=_model(),
         messages=_build_messages(retry_prompt, prior_tree),
-        max_tokens=4096,
+        max_tokens=8192,
         timeout=timeout,
     )
     raw2 = response2.choices[0].message.content or ""
@@ -246,7 +287,29 @@ def generate_blocking(prompt: str, prior_tree: dict | None = None, timeout: floa
     if _validate(tree2):
         return tree2
 
-    raise ValueError("K2-Think returned malformed output after retry")
+    # Third attempt: minimal fallback — ask for the simplest valid prototype
+    log.warning("[generate] Second attempt invalid, trying minimal prototype fallback")
+    minimal_prompt = (
+        f"Generate a minimal UI prototype JSON for: {prompt}\n\n"
+        "Return ONLY this JSON structure (fill in the values):\n"
+        '{{"title":"...", "description":"...", "theme":"light", "layout":"dashboard",'
+        '"nav":{{"brand":"..."}},"sections":[{{"id":"header","type":"header","span":"full",'
+        '"props":{{"title":"...","subtitle":"..."}}}}]}}'
+    )
+    response3 = client.chat.completions.create(
+        model=_model(),
+        messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": minimal_prompt}],
+        max_tokens=4096,
+        timeout=timeout,
+    )
+    raw3 = response3.choices[0].message.content or ""
+    clean3 = _strip_think(raw3)
+    tree3 = extract_last_json(clean3)
+
+    if _validate(tree3):
+        return tree3
+
+    raise ValueError("K2-Think returned malformed output after 3 attempts")
 
 
 def stream_generate(prompt: str, prior_tree: dict | None, queue: asyncio.Queue, loop: asyncio.AbstractEventLoop):
@@ -270,7 +333,7 @@ def stream_generate(prompt: str, prior_tree: dict | None, queue: asyncio.Queue, 
             model=_model(),
             messages=_build_messages(prompt, prior_tree),
             stream=True,
-            max_tokens=4096,
+            max_tokens=8192,
         )
 
         for chunk in stream:

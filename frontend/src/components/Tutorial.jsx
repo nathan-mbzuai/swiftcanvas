@@ -5,7 +5,7 @@ const IDLE_STEPS = [
   {
     target: ".brand",
     position: "right",
-    title: "Welcome to SwiftCanvas",
+    title: "Welcome to InfiniteCanvas",
     body: "Describe any interface in plain language and K2-Think V3 will generate a live, interactive React prototype in seconds — no code required.",
     k2: "K2-Think V3 plans your design requirements, lays out component structure, and generates a full UI schema through chain-of-thought reasoning.",
     hasNext: true,
@@ -49,7 +49,7 @@ const STAGE_EXPLANATIONS = {
   },
   render: {
     k2: "Validation catches structural issues before the renderer fires, so the prototype always appears in a coherent state.",
-    body: "SwiftCanvas is parsing the completed JSON, checking the component tree for structural integrity, and handing it to the React renderer. Your prototype is about to appear.",
+    body: "InfiniteCanvas is parsing the completed JSON, checking the component tree for structural integrity, and handing it to the React renderer. Your prototype is about to appear.",
   },
 };
 

@@ -17,15 +17,14 @@ const CAPABILITIES = [
   {
     icon: "🎨",
     title: "Generative UI",
-    desc: "Describe any interface → live React prototype in seconds",
+    desc: "Describe any interface and get a live React prototype in seconds",
     active: true,
-    label: "● Live demo",
     prompt: "a project management dashboard with sprint board, task assignments, velocity chart, team workload breakdown, and deadline alert panel",
   },
   {
     icon: "🧠",
     title: "Chain-of-Thought",
-    desc: "Deep reasoning before every response — watch it think live",
+    desc: "Watch the full reasoning chain before every response",
     prompt: "an AI reasoning trace explorer with expandable step-by-step thought chains, confidence scores per step, token usage breakdown, branching decision paths, and a model run comparison table",
   },
   {
@@ -214,7 +213,7 @@ export default function App() {
           } else if (evt.type === "done") {
             stopStages();
             setTree(evt.tree);
-            setHistory(prev => [...prev, { role: "assistant", content: evt.tree?.title || "Generated" }]);
+            setHistory(prev => [...prev, { role: "assistant", content: evt.tree?.title || "Generated", tree: evt.tree }]);
             setStatus("ready");
           } else if (evt.type === "error") {
             stopStages();
@@ -229,6 +228,13 @@ export default function App() {
       setStatus("error");
     }
   }, [history, prompt, status]);
+
+  function handleBack() {
+    setStatus("idle");
+    setTree(null);
+    setStreamText("");
+    setErrorMsg("");
+  }
 
   function handleKeyDown(e) {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -248,7 +254,7 @@ export default function App() {
         <div className="left-header">
           <div className="brand">
             <div className="brand-icon">⚡</div>
-            <h1>SwiftCanvas</h1>
+            <h1>InfiniteCanvas</h1>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div className="k2-badge">
@@ -293,12 +299,17 @@ export default function App() {
                 );
               }
               const versionNum = history.slice(0, i + 1).filter(m => m.role === "assistant").length;
-              let parsed = null;
-              try { parsed = JSON.parse(msg.content); } catch {}
+              const hasTree = !!msg.tree;
               return (
-                <div key={i} className="history-assistant">
+                <div
+                  key={i}
+                  className={`history-assistant${hasTree ? " restorable" : ""}`}
+                  onClick={hasTree ? () => { setTree(msg.tree); setStatus("ready"); } : undefined}
+                  title={hasTree ? "Click to restore this prototype" : undefined}
+                >
                   <span className="version-badge">v{versionNum}</span>
-                  <span>{parsed?.title || "Generated prototype"}</span>
+                  <span>{msg.content || "Generated prototype"}</span>
+                  {hasTree && <span className="restore-hint">Restore</span>}
                 </div>
               );
             })
@@ -347,9 +358,16 @@ export default function App() {
       {/* ── Right panel ────────────────────────────────────────── */}
       <div className="right-panel">
         <div className="canvas-toolbar">
-          <div className="canvas-title">
-            <StatusDot status={status} />
-            {tree?.title || "Canvas"}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {(tree || status === "error") && (
+              <button className="btn-back" onClick={handleBack} title="Return to home screen">
+                ← Home
+              </button>
+            )}
+            <div className="canvas-title">
+              <StatusDot status={status} />
+              {tree?.title || "Canvas"}
+            </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div className="canvas-status">
